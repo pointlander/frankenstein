@@ -18,7 +18,7 @@ var (
 )
 
 // Load data from files
-func Load() int {
+func Load() (length, max int) {
 	in, err := os.Open("train.en")
 	if err != nil {
 		panic(err)
@@ -34,6 +34,9 @@ func Load() int {
 			}
 		}
 		line = strings.TrimSpace(line)
+		if len(line) > max {
+			max = len(line)
+		}
 		English = append(English, line)
 	}
 
@@ -52,16 +55,20 @@ func Load() int {
 			}
 		}
 		line = strings.TrimSpace(line)
+		if len(line) > max {
+			max = len(line)
+		}
 		German = append(German, line)
 	}
 
-	if len(English) != len(German) {
+	length = len(English)
+	if length != len(German) {
 		panic("English and German data size not equal")
 	}
-	return len(English)
+	return length, max
 }
 
 func main() {
-	size := Load()
-	fmt.Println("size: ", size)
+	size, max := Load()
+	fmt.Println("size: ", size, " max: ", max)
 }
