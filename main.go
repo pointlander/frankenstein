@@ -71,4 +71,27 @@ func Load() (length, max int) {
 func main() {
 	size, max := Load()
 	fmt.Println("size: ", size, " max: ", max)
+
+	de, en := []byte(German[0]), []byte(English[0])
+	var buffer [4]byte
+	input := NewMatrix(0, 1024, len(de)+1+len(en)+2)
+	train := make([]byte, len(de))
+	copy(train, de)
+	train = append(train, 0)
+	train = append(train, en...)
+	train = append(train, 0, 0)
+	for i, symbol := range train {
+		buffer[i%len(buffer)] = symbol
+		for _, s := range buffer {
+			embedding := make([]float64, 256)
+			embedding[s] = 1
+			input.Data = append(input.Data, embedding...)
+		}
+	}
+	embedding, _ := PCA(input)
+	embedding = Normalize(embedding)
+	sa := SelfAttention(embedding, embedding, embedding)
+	for i := 0; i < sa.Rows; i++ {
+		fmt.Println(i, sa.Data[i*sa.Cols:(i+1)*sa.Cols])
+	}
 }
