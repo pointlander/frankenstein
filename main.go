@@ -6,6 +6,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -20,15 +21,15 @@ var (
 )
 
 // Load data from files
-func Load() (length, max int) {
+func Load(n int) (length, max int) {
 	in, err := os.Open("train.en")
 	if err != nil {
 		panic(err)
 	}
 	defer in.Close()
 
-	reader := bufio.NewReader(in)
-	for {
+	reader, index := bufio.NewReader(in), 0
+	for index < n {
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
@@ -40,6 +41,7 @@ func Load() (length, max int) {
 			max = len(line)
 		}
 		English = append(English, line)
+		index++
 	}
 
 	in, err = os.Open("train.de")
@@ -48,8 +50,8 @@ func Load() (length, max int) {
 	}
 	defer in.Close()
 
-	reader = bufio.NewReader(in)
-	for {
+	reader, index = bufio.NewReader(in), 0
+	for index < n {
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
@@ -61,6 +63,7 @@ func Load() (length, max int) {
 			max = len(line)
 		}
 		German = append(German, line)
+		index++
 	}
 
 	length = len(English)
@@ -70,8 +73,15 @@ func Load() (length, max int) {
 	return length, max
 }
 
+var (
+	// FlagCount is the number of lines of training data to load
+	FlagCount = flag.Int("count", 1000, "number of lines of training to load")
+)
+
 func main() {
-	size, max := Load()
+	flag.Parse()
+
+	size, max := Load(*FlagCount)
 	fmt.Println("size: ", size, " max: ", max)
 
 	de, en := []byte(German[0]), []byte(English[0])
