@@ -91,7 +91,7 @@ func main() {
 	train = append(train, 1)
 	train = append(train, en...)
 	input := NewMatrix(0, 1024, len(train))
-	output := make([]int, len(train))
+	output := make([]int, 0, len(train))
 	for i, symbol := range train {
 		buffer[i%len(buffer)] = symbol
 		for _, s := range buffer {
@@ -116,4 +116,13 @@ func main() {
 	forest.Data = randomforest.ForestData{X: in, Class: output}
 	fmt.Println("training...")
 	forest.Train(1000)
+	symbol := forest.Vote(in[0])
+	fmt.Println(len(symbol))
+	x, index := 0.0, 0
+	for k, v := range symbol {
+		if v > x {
+			x, index = v, k
+		}
+	}
+	fmt.Printf("%c %c\n", index, output[0])
 }
