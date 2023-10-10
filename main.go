@@ -10,6 +10,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	randomforest "github.com/malaschitz/randomForest"
 )
 
 var (
@@ -74,12 +76,12 @@ func main() {
 
 	de, en := []byte(German[0]), []byte(English[0])
 	var buffer [4]byte
-	input := NewMatrix(0, 1024, len(de)+1+len(en)+2)
 	train := make([]byte, len(de))
 	copy(train, de)
-	train = append(train, 0)
+	train = append(train, 1)
 	train = append(train, en...)
-	train = append(train, 0, 0)
+	input := NewMatrix(0, 1024, len(train))
+	output := make([]int, len(train))
 	for i, symbol := range train {
 		buffer[i%len(buffer)] = symbol
 		for _, s := range buffer {
@@ -87,11 +89,21 @@ func main() {
 			embedding[s] = 1
 			input.Data = append(input.Data, embedding...)
 		}
+		if next := i + 1; next < len(train) {
+			output = append(output, int(train[next]))
+		}
 	}
+	output = append(output, 0)
 	embedding, _ := PCA(input)
 	embedding = Normalize(embedding)
 	sa := SelfAttention(embedding, embedding, embedding)
+	in := make([][]float64, len(train))
 	for i := 0; i < sa.Rows; i++ {
-		fmt.Println(i, sa.Data[i*sa.Cols:(i+1)*sa.Cols])
+		in[i] = sa.Data[i*sa.Cols : (i+1)*sa.Cols]
 	}
+
+	forest := randomforest.Forest{}
+	forest.Data = randomforest.ForestData{X: in, Class: output}
+	fmt.Println("training...")
+	forest.Train(1000)
 }
