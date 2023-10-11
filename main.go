@@ -9,6 +9,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"strings"
 
@@ -83,7 +84,14 @@ func main() {
 
 	size, maxen, maxde := Load(*FlagCount)
 	max := maxen + maxde + 1
-	fmt.Println("size: ", size, " max: ", max)
+	min := math.MaxInt64
+	for pair := 0; pair < len(German); pair++ {
+		de, en := []byte(German[pair]), []byte(English[pair])
+		if length := len(de) + len(en) + 1; length < min {
+			min = length
+		}
+	}
+	fmt.Println("size: ", size, " max: ", max, " min: ", min)
 
 	in := make([][]float64, 0, *FlagCount)
 	output := make([]int, 0, *FlagCount)
@@ -95,7 +103,7 @@ func main() {
 		copy(train, de)
 		train = append(train, 1)
 		train = append(train, en...)
-		input := NewMatrix(0, 1024, max)
+		input := NewMatrix(0, 1024, len(train))
 
 		for i, symbol := range train {
 			buffer[i%len(buffer)] = symbol
@@ -108,19 +116,42 @@ func main() {
 				output = append(output, int(train[next]))
 			}
 		}
-		for i := 0; i < max-len(train); i++ {
+		/*for i := 0; i < max-len(train); i++ {
 			for j := 0; j < 4; j++ {
 				embedding := make([]float64, 256)
 				input.Data = append(input.Data, embedding...)
 			}
 			output = append(output, 0)
-		}
+		}*/
 		output = append(output, 0)
-		embedding, _ := PCA(input)
+		embedding, _ := PCA(input, min)
+		sum, stddev := make([]float64, min), make([]float64, min)
+		for i := 0; i < embedding.Rows; i++ {
+			row := embedding.Data[i*embedding.Cols : (i+1)*embedding.Cols]
+			for key, value := range row {
+				sum[key] += value
+			}
+		}
+		for key, value := range sum {
+			sum[key] = value / float64(embedding.Rows)
+		}
+		for i := 0; i < embedding.Rows; i++ {
+			row := embedding.Data[i*embedding.Cols : (i+1)*embedding.Cols]
+			for key, value := range row {
+				diff := value - sum[key]
+				stddev[key] += diff * diff
+			}
+		}
+		for key, value := range stddev {
+			stddev[key] = math.Sqrt(value / float64(embedding.Rows))
+		}
+		fmt.Println(stddev)
 		embedding = Normalize(embedding)
 		sa := SelfAttention(embedding, embedding, embedding)
+		fmt.Println(sa.Cols)
 		for i := 0; i < sa.Rows; i++ {
-			in = append(in, sa.Data[i*sa.Cols:(i+1)*sa.Cols])
+			row := sa.Data[i*sa.Cols : (i+1)*sa.Cols]
+			in = append(in, row)
 		}
 	}
 

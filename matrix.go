@@ -373,7 +373,7 @@ func PageRank(m Matrix) Matrix {
 }
 
 // PCA computes the principal component analysis of the matrix
-func PCA(m Matrix) (Matrix, *mat.Dense) {
+func PCA(m Matrix, min int) (Matrix, *mat.Dense) {
 	o := Matrix{
 		Data: make([]float64, 0, m.Cols*m.Rows),
 	}
@@ -387,7 +387,7 @@ func PCA(m Matrix) (Matrix, *mat.Dense) {
 	var projection mat.Dense
 	var vector mat.Dense
 	pc.VectorsTo(&vector)
-	projection.Mul(data, &vector)
+	projection.Mul(data, vector.Slice(0, m.Cols, 0, min))
 	rows, cols := projection.Dims()
 	o.Cols = cols
 	o.Rows = rows
