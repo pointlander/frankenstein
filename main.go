@@ -91,6 +91,7 @@ func main() {
 			min = length
 		}
 	}
+	min -= 3
 	fmt.Println("size: ", size, " max: ", max, " min: ", min)
 
 	in := make([][]float64, 0, *FlagCount)
@@ -103,17 +104,20 @@ func main() {
 		copy(train, de)
 		train = append(train, 1)
 		train = append(train, en...)
-		input := NewMatrix(0, 1024, len(train))
+		length := len(train) - 3
+		input := NewMatrix(0, 1024, length)
 
 		for i, symbol := range train {
 			buffer[i%len(buffer)] = symbol
-			for _, s := range buffer {
-				embedding := make([]float64, 256)
-				embedding[s] = 1
-				input.Data = append(input.Data, embedding...)
-			}
-			if next := i + 1; next < len(train) {
-				output = append(output, int(train[next]))
+			if i >= len(buffer)-1 {
+				for _, s := range buffer {
+					embedding := make([]float64, 256)
+					embedding[s] = 1
+					input.Data = append(input.Data, embedding...)
+				}
+				if next := i + 1; next < len(train) {
+					output = append(output, int(train[next]))
+				}
 			}
 		}
 		/*for i := 0; i < max-len(train); i++ {
@@ -159,7 +163,7 @@ func main() {
 	forest.Data = randomforest.ForestData{X: in, Class: output}
 	fmt.Println("training...")
 	forest.Train(1000)
-	symbol := forest.Vote(in[5])
+	symbol := forest.Vote(in[0])
 	fmt.Println(len(symbol))
 	x, index := 0.0, 0
 	for k, v := range symbol {
@@ -167,5 +171,5 @@ func main() {
 			x, index = v, k
 		}
 	}
-	fmt.Printf("\"%c\" \"%c\"\n", index, output[5])
+	fmt.Printf("\"%c\" \"%c\"\n", index, output[0])
 }
